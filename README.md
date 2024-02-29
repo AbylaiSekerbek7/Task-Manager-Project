@@ -1,8 +1,8 @@
-# Task Manager Project - created by Sekerbek Abylaikhan
+# Task Manager Project - created by Sekerbek Abylaikhan 💡
 
 This is simple task manager project on Python with using Tkinter
 
-# Functional 
+# Functional  ✨
 
 - Add ( You can add your tasks with selected deadline in list )
 
@@ -18,7 +18,7 @@ This is simple task manager project on Python with using Tkinter
 
 We are saving our data in simple json file 'tasks.json' see it in directory
 
-# Usage 
+# Usage 🔨
 
 To run correctly the programm, write this commands in terminal 
 
@@ -26,10 +26,10 @@ To run correctly the programm, write this commands in terminal
 
 - pip install tkcalendar
 
-# FAQ
+# FAQ 🔍
 
 If you still have any Questions, write to me in Telegram '@abylai_s7'
 
 [Link to git hub](https://github.com/AbylaiSekerbek7/Task-Manager-Project.git)
 
-# Thank you and Goodbye...!
+# Thank you and Goodbye...! 🎇
