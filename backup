@@ -1,0 +1,168 @@
+# imports
+import tkinter as tk
+import json
+import pygame
+from tkinter import ttk, messagebox
+from tkcalendar import Calendar, DateEntry
+from datetime import datetime
+
+class TaskManagerApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        pygame.init()
+
+        # Window configurations
+        self.title("Task Manager App")
+        self.geometry("700x700")
+        self.configure(bg="#DCF2F1")
+        self.dark_mode = False
+
+        # Loading sounds
+        self.add_sound_delete = pygame.mixer.Sound('./sounds/light-switch-156813.mp3')
+        self.done_sound = pygame.mixer.Sound('./sounds/ping-82822.mp3')
+
+        # Style configurations
+        style = ttk.Style()
+        style.configure('Blue.TButton', background='blue')    # Blue color
+        style.configure('Green.TButton', background='green')  # Green color
+        style.configure('Red.TButton', background='red')      # Red color
+
+        # Button for switching background of screen
+        self.btnColor = tk.Button(self, text="Darker", command=self.toggle_color, fg="black", bg="#4158D0", )
+        self.btnColor.place(relx=0.1, rely=0.1, anchor="center")
+
+        # Label for displaying current system date and time
+        self.current_datetime_label = ttk.Label(self, text="", font=("TkDefaultFont", 12))
+        self.current_datetime_label.pack(side=tk.TOP, pady=5)
+
+        # Task input
+        self.task_input = ttk.Entry(self, font=("TkDefaultFont", 16), width=30, style="Custom.TEntry")
+        self.task_input.pack(pady=10)
+        self.task_input.insert(0, "Enter your todo here...")
+
+        # Label to display selected date
+        self.date_label = tk.Label(self, text="Selected deadline: ")
+        self.date_label.pack(pady=5)
+
+        # Date input
+        self.date_input = DateEntry(self, width=38, background='darkblue', foreground='white', borderwidth=2)
+        self.date_input.pack(pady=5)
+
+        # Task List
+        self.task_list = tk.Listbox(self, font=("TkDefaultFont", 16), height=10, selectmode=tk.NONE)
+        self.task_list.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons to Add Task, Done Task, Delete Task, View Stats
+        ttk.Button(self, text="Add", command=self.add_task, style="Blue.TButton").pack(pady=5)
+        ttk.Button(self, text="Done", command=self.mark_done, style="Green.TButton").pack(side=tk.LEFT, padx=10, pady=10)
+        ttk.Button(self, text="Delete", command=self.delete_task, style="Red.TButton").pack(side=tk.RIGHT, padx=10, pady=10)
+        ttk.Button(self, text="View Stats", command=self.view_stats, style="Blue.TButton").pack(side=tk.BOTTOM, pady=10)
+
+        self.update_current_datetime()
+        self.load_tasks()
+
+    # All Functions
+
+    # def for switching the background of screen
+    def toggle_color(self):
+            if self.dark_mode:
+                self.configure(bg="#DCF2F1")
+                self.btnColor.configure(text="Darker")
+                self.dark_mode = False
+            else:
+                self.configure(bg="#0F1035")
+                self.btnColor.configure(text="Lighter")
+                self.dark_mode = True
+
+    # def to update date and time, every 1 second
+    def update_current_datetime(self):
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.current_datetime_label.config(text=f"Current Date and Time: {current_datetime}")
+        self.after(1000, self.update_current_datetime)
+
+    def add_task(self):
+        task = self.task_input.get()
+        deadline = self.date_input.get()
+        if task.strip() == "":
+            messagebox.showerror("Invalid task", "Please enter a none empty task.")
+            return
+        try:
+            if self.date_input.get_date() < datetime.now().date():
+                task_color = "red"
+            else:
+                task_color = "orange"
+            task_with_deadline = f"{task} {deadline}"
+            self.task_list.insert(tk.END, task_with_deadline)
+            self.task_list.itemconfig(tk.END, fg=task_color)
+            self.task_input.delete(0, tk.END)
+            self.date_input.delete(0, tk.END)
+            self.date_label.config(text=f"Selected deadline: {deadline}")
+        except ValueError:
+            messagebox.showerror("Invalid Deadline", "Please enter deadline in DD/MM/YYYY format.")
+
+        self.save_tasks()
+        self.add_sound_delete.play()
+
+    def mark_done(self):
+        selected_task_index = self.task_list.curselection()
+        if selected_task_index:
+            self.task_list.itemconfig(selected_task_index, fg="green")
+            self.save_tasks()
+            self.done_sound.play()
+
+    def delete_task(self):
+        selected_task_index = self.task_list.curselection()
+        if selected_task_index:
+            self.task_list.delete(selected_task_index)
+            self.save_tasks()
+            self.add_sound_delete.play()
+
+    def view_stats(self):
+        total_tasks = self.task_list.size()
+        completed_tasks = sum(1 for i in range(total_tasks) if "green" in self.task_list.itemcget(i, "fg"))
+        inprocess_tasks = sum(1 for i in range(total_tasks) if "orange" in self.task_list.itemcget(i, "fg"))
+        overdue_tasks = sum(1 for i in range(total_tasks) if "red" in self.task_list.itemcget(i, "fg"))
+        messagebox.showinfo("Task Statistics", f"Total Tasks: {total_tasks}\nCompleted Tasks: {completed_tasks}\nIn Process Tasks: {inprocess_tasks}\nOverdue Tasks: {overdue_tasks}")
+
+    # def to Load Tasks from json
+    def load_tasks(self):
+        try:
+            with open("tasks.json", "r") as f:
+                data = json.load(f)
+                for task in data:
+                    task_text = f"{task['text']} {task['deadline']}"  # Объединяем текст задачи и дедлайн
+                    self.task_list.insert(tk.END, task_text)
+                    self.task_list.itemconfig(tk.END, fg=task["color"])
+        except FileNotFoundError:
+            pass
+
+    def save_tasks(self):
+        data = []
+        for i in range(self.task_list.size()):
+            task_with_deadline = self.task_list.get(i)
+            text, deadline = task_with_deadline.rsplit(' ', 1)  # Разделяем текст и дедлайн
+            color = self.task_list.itemcget(i, "fg")
+            data.append({"text": text, "color": color, "deadline": deadline})
+        with open("tasks.json", "w") as f:
+            json.dump(data, f)
+
+    def check_deadline_tasks(self):
+        current_datetime = datetime.now()
+        for i in range(self.task_list.size()):
+            task_with_deadline = self.task_list.get(i)
+            task_text, deadline_str = task_with_deadline.rsplit(' ', 1)
+            deadline = datetime.strptime(deadline_str, "%m/%d/%y")
+            task_color = self.task_list.itemcget(i, "fg")
+
+            if task_color == "orange":  # Проверяем только задачи в процессе
+                if deadline < current_datetime:
+                    self.task_list.itemconfig(i, fg="red")
+                else:
+                    self.task_list.itemconfig(i, fg="orange")
+
+        self.after(1000, self.check_deadline_tasks)
+
+if __name__ == '__main__':
+    app = TaskManagerApp()
+    app.check_deadline_tasks()
+    app.mainloop()
