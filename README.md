@@ -10,7 +10,7 @@ This is simple task manager project on Python with using Tkinter
 
 - View Stats ( To see statistic of your tasks just click on view stats button, and it will show you it in message box )
 
-- Delete ( Delete your tasks in seconds )
+- Delete ( Delete your tasks from list in a few seconds )
 
 - Theme ( Change your background theme with 'Darker' 'Lighter' buttons )
 
